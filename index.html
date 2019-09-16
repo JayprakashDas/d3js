@@ -3,77 +3,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <link href='https://fonts.googleapis.com/css?family=Faustina' rel='stylesheet' type='text/css'>
   <!-- Compiled and minified CSS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-  
-  <style>
-    h2, p{
-      margin: 10px 0;
-    }
-    header{
-      margin-bottom: 40px;
-    }
-    .back{
-      background: #2f6487
-    }
-    .backg{
-      background-color: #225170;
-     font-family: 'Faustina', serif;
-     
-    }
-    .font{
-      font-size: 30px;
-    }
-    .font2{
-      font-size: 20px;
-    }
-    .font3{
-      font-size: 18px;
-    }
-    
-  </style>
-  <title>Devlopers Skill Visualizer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-rc.2/css/materialize.min.css">
+  <link rel="stylesheet" href="style.css">
+
+  <title>Stay FIt</title>
 </head>
-<body class=" back">
+<body class="grey darken-4">
 
-  <header class="backg darken-1 section">
-    <h2 class="center white-text font">Developer Skill Visualizer</h2>
-    <p class="flow-text grey-text center text-lighten-2 font2">Visual the skills in Percentange</p>
-  </header>
+    <div class="nav z-depth-0">
+      <div class="section center">
+        <h3 class="white-text center text">- Fitness Hub -</h3>
+      </div> 
+    </div>
+      
+    <div class="section center">
+      <p class="grey-text flow-text text2">A fitness tracker for Developers</p>
+    </div>
 
-  <div class="container section">
-    <div class="row">
-      <div class="col s12 m5">
-        <form class="card z-depth-0">
-          <div class="card-content">
-            <span class="card-title indigo-text"><div class="font3">Add Skills:</div></span>
-            <div class="input-field">
-              <input type="text" id="name" placeholder="Add Skill Name">
-              <label for="name"></label>
-            </div>
-            <div class="input-field">
-              <input type="text" id="cost" placeholder="Your Expertise(%)">
-              <label for="cost"></label>
-            </div>
-            <div class="input-field center">
-              <button class="btn-large pink white-text">Add Item</button>
-            </div>
-            <div class="input-field center">
-              <p id="error" class="red-text"></p>
-            </div>
-          </div>
+    <div class="container section">
+      <div class="row">
+        <div class="col s12 l5">
+          <button class="active text3" data-activity="cycling">Cycling</button>
+          <button  class='text3'data-activity="running">Running</button>
+          <button class='text3'data-activity="swimming">Swimming</button>
+          <button class='text3' data-activity="walking">Walking</button>
+        </div>
+        <div class="col s12 l6 push-l1">
+          <div class="canvas"></div>
+        </div>
+      </div>
+      <div class="row">
+        <form class="col m6 push-m3">
+          <p class="flow-text grey-text center">How much <span>cycling</span> have you done today?</p>
+          <input class="grey-text" type="text" id="cycling" placeholder="Distance in km" />
+          <p class="center pink-text error text-lighten-1"></p>
         </form>
       </div>
-      <div class="col s12 m5 push-m1">
-        <div class="canvas"></div>
-      </div>
     </div>
-  </div>
 
-<script src="https://www.gstatic.com/firebasejs/6.3.5/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/6.3.5/firebase-firestore.js"></script>
-<script>
+  
+  <script src="https://www.gstatic.com/firebasejs/5.4.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.4.2/firebase-firestore.js"></script>
+  <script>
 
   var firebaseConfig = {
     apiKey: "AIzaSyDC1uFF9GtiQ2NTgsZRExDRPYWSZULhMOw",
@@ -91,10 +63,7 @@
   db.settings(settings)
 </script>
 
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.7.0/d3.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-tip/0.9.1/d3-tip.min.js"></script>
+  <script src="https://d3js.org/d3.v5.js"></script>
   <script src="index.js"></script>
   <script src="graph.js"></script>
 </body>

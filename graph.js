@@ -1,100 +1,150 @@
-const dims = { height: 400, width: 350, radius: 170 };
-const cent = { x: (dims.width / 2 + 5), y: (dims.height / 2.4 + 5)};
+const margin = { top: 20, right: 20, bottom: 50, left: 100 };
+const graphWidth = 560 - margin.right - margin.left;
+const graphHeight = 360 - margin.top - margin.bottom;
 
-// create svg container
 const svg = d3.select('.canvas')
   .append('svg')
-  .attr('width', dims.width + 150)
-  .attr('height', dims.height + 150);
+  .attr('width', graphWidth + margin.left + margin.right)
+  .attr('height', graphHeight + margin.top + margin.bottom);
 
 const graph = svg.append('g')
-  .attr("transform", `translate(${cent.x}, ${cent.y})`);
-  // translates the graph group to the middle of the svg container
+  .attr('width', graphWidth)
+  .attr('height', graphHeight)
+  .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-const pie = d3.pie()
-  .sort(null)
-  .value(d => d.cost);
-  // the value we are evaluating to create the pie angles
+// scales
+const x = d3.scaleTime().range([0, graphWidth]);
+const y = d3.scaleLinear().range([graphHeight, 0]);
 
-const arcPath = d3.arc()
-  .outerRadius(dims.radius)
-  .innerRadius(dims.radius / 1.75);
+// axes groups
+const xAxisGroup = graph.append('g')
+  .attr('class', 'x-axis')
+  .attr('transform', "translate(0," + graphHeight + ")");
 
-// ordinal colour scale
-const colour = d3.scaleOrdinal(d3["schemeSet3"]);
+const yAxisGroup = graph.append('g')
+  .attr('class', 'y-axis');
 
-// legend setup
-const legendGroup = svg.append('g')
-  .attr('transform', `translate(${dims.width + 40}, 10)`)
+// d3 line path generator
+const line = d3.line()
+  //.curve(d3.curveCardinal)
+  .x(function(d){ return x(new Date(d.date))})
+  .y(function(d){ return y(d.distance)});
 
-const legend = d3.legendColor()
-  .shape('path', d3.symbol().type(d3.symbolCircle)())
-  .shapePadding(10)
-  .scale(colour);
+// line path element
+const path = graph.append('path');
 
-const tip = d3.tip()
-  .attr('class', 'tip card')
-  .html(d => {
-    let content = `<div class="name">   ${d.data.name}</div>`;
-    content += `<div class="cost">   ${d.data.cost}%</div>`;
-    // content += `<div class="delete">Click slice to delete</div>`
-    return content;
-  });
+// create dotted line group and append to graph
+const dottedLines = graph.append('g')
+  .attr('class', 'lines')
+  .style('opacity', 0);
 
-graph.call(tip);
+// create x dotted line and append to dotted line group
+const xDottedLine = dottedLines.append('line')
+  .attr('stroke', '#aaa')
+  .attr('stroke-width', 1)
+  .attr('stroke-dasharray', 4);
+
+// create y dotted line and append to dotted line group
+const yDottedLine = dottedLines.append('line')
+  .attr('stroke', '#aaa')
+  .attr('stroke-width', 1)
+  .attr('stroke-dasharray', 4);
 
 // update function
 const update = (data) => {
 
-  // update colour scale domain
-  colour.domain(data.map(d => d.name));
+  // filter data based on current activity
+  data = data.filter(item => item.activity == activity);
 
-  // update legend
-  legendGroup.call(legend);
-  legendGroup.selectAll('text').attr('fill', 'white');
-  
-  // join enhanced (pie) data to path elements
-  const paths = graph.selectAll('path')
-    .data(pie(data));
+  // sort the data based on date objects
+  data.sort((a,b) => new Date(a.date) - new Date(b.date));
 
-  // handle the exit selection 
-  paths.exit()
-    .transition().duration(750)
-    .attrTween("d", arcTweenExit)
-    .remove();
+  // set scale domains
+  x.domain(d3.extent(data, d => new Date(d.date)));
+  y.domain([0, d3.max(data, d =>  d.distance)]);
 
-  // handle the current DOM path updates
-  paths.transition().duration(750)
-    .attrTween("d", arcTweenUpdate);
+  // update path data
+  path.data([data])
+    .attr('fill', 'none')
+    .attr('stroke', '#00bfa5')
+    .attr('stroke-width', '2')
+    .attr('d', line);
 
-  paths.enter()
-    .append('path')
-      .attr('class', 'arc')
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 3)
-      .attr('d', arcPath)
-      .attr('fill', d => colour(d.data.name))
-      .each(function(d){ this._current = d })
-      .transition().duration(750).attrTween("d", arcTweenEnter);
+  // create circles for points
+  const circles = graph.selectAll('circle')
+    .data(data);
 
-  // add events
-  graph.selectAll('path')
-    .on('mouseover', (d,i,n) => {
-      tip.show(d, n[i]);
-      handleMouseOver(d, i, n);
+  // remove unwanted points
+  circles.exit().remove();
+
+  // update current points
+  circles.attr('r', '4')
+    .attr('cx', d => x(new Date(d.date)))
+    .attr('cy', d => y(d.distance));
+
+  // add new points
+  circles.enter()
+    .append('circle')
+      .attr('r', '4')
+      .attr('cx', d => x(new Date(d.date)))
+      .attr('cy', d => y(d.distance))
+      .attr('fill', '#ccc');
+
+  // add event listeners to circle (and show dotted lines)
+  graph.selectAll('circle')
+    .on('mouseover', (d, i, n) => {
+      d3.select(n[i])
+        .transition().duration(100)
+        .attr('r', 8)
+        .attr('fill', '#fff');
+      // set x dotted line coords (x1,x2,y1,y2)
+      xDottedLine
+        .attr('x1', x(new Date(d.date)))
+        .attr('x2', x(new Date(d.date)))
+        .attr('y1', graphHeight)
+        .attr('y2', y(d.distance));
+      // set y dotted line coords (x1,x2,y1,y2)
+      yDottedLine
+        .attr('x1', 0)
+        .attr('x2', x(new Date(d.date)))
+        .attr('y1', y(d.distance))
+        .attr('y2', y(d.distance));
+      // show the dotted line group (opacity)
+      dottedLines.style('opacity', 1);
     })
-    .on('mouseout', (d,i,n) => {
-      tip.hide();
-      handleMouseOut(d, i, n);
-    })
-    // .on('click', handleClick);
+    .on('mouseleave', (d,i,n) => {
+      d3.select(n[i])
+        .transition().duration(100)
+        .attr('r', 4)
+        .attr('fill', '#fff');
+      // hide the dotted line group (opacity)
+      dottedLines.style('opacity', 0)
+    });
+
+  // create axes
+  const xAxis = d3.axisBottom(x)
+    .ticks(4)
+    .tickFormat(d3.timeFormat("%b %d"));
+    
+  const yAxis = d3.axisLeft(y)
+    .ticks(4)
+    .tickFormat(d => d + 'm');
+
+  // call axes
+  xAxisGroup.call(xAxis);
+  yAxisGroup.call(yAxis);
+
+  // rotate axis text
+  xAxisGroup.selectAll('text')
+    .attr('transform', 'rotate(-40)')
+    .attr('text-anchor', 'end');
 
 };
 
-// data array and firestore
+// data and firestore
 var data = [];
 
-db.collection('expenses').orderBy('cost').onSnapshot(res => {
+db.collection('activities').onSnapshot(res => {
 
   res.docChanges().forEach(change => {
 
@@ -117,58 +167,6 @@ db.collection('expenses').orderBy('cost').onSnapshot(res => {
 
   });
 
-  // call the update function
   update(data);
 
 });
-
-const arcTweenEnter = (d) => {
-  var i = d3.interpolate(d.endAngle-0.1, d.startAngle);
-
-  return function(t) {
-    d.startAngle = i(t);
-    return arcPath(d);
-  };
-};
-
-const arcTweenExit = (d) => {
-  var i = d3.interpolate(d.startAngle, d.endAngle);
-
-  return function(t) {
-    d.startAngle = i(t);
-    return arcPath(d);
-  };
-};
-
-// use function keyword to allow use of 'this'
-function arcTweenUpdate(d) {
-  // interpolate between the two objects
-  var i = d3.interpolate(this._current, d);
-  // update the current prop with new updated data
-  this._current = i(1);
-
-  return function(t) {
-    // i(t) returns a value of d (data object) which we pass to arcPath
-    return arcPath(i(t));
-  };
-};
-
-// event handlers
-const handleMouseOver = (d,i,n) => {
-  //console.log(n[i]);
-  d3.select(n[i])
-    .transition('changeSliceFill').duration(300)
-      .attr('fill', '#fff');
-};
-
-const handleMouseOut = (d,i,n) => {
-  //console.log(n[i]);
-  d3.select(n[i])
-    .transition('changeSliceFill').duration(300)
-      .attr('fill', colour(d.data.name));
-};
-
-const handleClick = (d) => {
-  const id = d.data.id;
-  db.collection('expenses').doc(id).delete();
-};
